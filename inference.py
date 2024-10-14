@@ -4,14 +4,12 @@ import torch
 import torch.distributed as dist
 from PIL import Image
 from project.models.model import MappingType, CaptionModel
-id = 391895
 from transformers import GPT2Tokenizer
-from pycocotools.coco import COCO
 import torch.utils.data as data
 from clip1.clip import _transform
 import json
 import skimage.io as io1
-from utils.misc import generate2_adpt_if_nodist, evaluate_on_coco_caption
+from utils.misc import generate2_adpt_if_nodist
 
 dist.init_process_group("nccl", init_method='file:///tmp/somefile', rank=0, world_size=1)
 
@@ -44,7 +42,6 @@ model = CaptionModel(10, clip_length=10, prefix_size=512,
                                  num_layers=8, mapping_type=MappingType.MLP, Timestep=20,
                                  if_drop_rate=0.1)
 
-
 image = image.cuda(non_blocking=True)
 kw = 'anniversary,function,'
 tokenizer = GPT2Tokenizer.from_pretrained("gpt2")
@@ -53,12 +50,12 @@ padding = 20 - kt.shape[0]
 if padding > 0:
     kt = torch.cat((kt, torch.zeros(padding, dtype=torch.int64) - 1))
 elif padding < 0:
-    kt = kt[:5]
+    kt = kt[:20]
 mask_kt = kt.ge(0)
 kt[~mask_kt] = 0
 kt = kt.cuda(non_blocking=True)
 
-model.load_state_dict(torch.load('./checkpoints/10/10-049.pt', map_location=torch.device('cpu'))["model"])
+model.load_state_dict(torch.load('../keyword_diffusion/checkpoints/6/6-best.pt', map_location=torch.device('cpu'))["model"])
 model = model.cuda()
 model.eval()
 image = image.unsqueeze(0)
